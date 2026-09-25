@@ -14,6 +14,8 @@ client/dist/
 server/dist/
 dist/
 build/
+.vite/
+client/.vite/
 
 # Database data & runtime files
 server/data/
