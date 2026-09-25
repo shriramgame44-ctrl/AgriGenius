@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Proper GYM — Frictionless Strength & Hypertrophy Tracker</title>
+  
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti for PR Celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="oled-theme">
+  <div id="app-root">
+    
+    <!-- Top System & Connectivity Status Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <span class="brand-dot"></span>
+          <span class="brand-name">PROPER<span class="brand-highlight">GYM</span></span>
+        </div>
+      </div>
+      <div class="header-right">
+        <!-- Live Offline / Sync Status Badge -->
+        <button id="sync-status-btn" class="status-pill online" title="Click to inspect offline sync queue">
+          <span class="status-indicator"></span>
+          <span id="sync-status-text">Online</span>
+          <span id="sync-queue-badge" class="queue-badge hidden">0</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Viewport Router Container -->
+    <main id="main-content" class="scroll-container">
+      
+      <!-- TAB 1: WORKOUT / TRAIN VIEW -->
+      <section id="view-train" class="tab-view active">
+        <!-- Live Workout Active Panel (Rendered dynamically when active) -->
+        <div id="active-workout-container" class="hidden"></div>
+
+        <!-- No Active Workout: Launch / Routine Quick Start -->
+        <div id="workout-launcher" class="content-padded">
+          <div class="hero-card">
+            <div class="hero-pill">NEXT RECOMMENDED SESSION</div>
+            <h2 id="recommended-routine-title">PPL: Push Hypertrophy</h2>
+            <p id="recommended-routine-sub">Focus: Chest, Delts & Triceps · 5 Exercises · ~55 min</p>
+            <div class="hero-actions">
+              <button id="btn-start-recommended" class="btn btn-primary btn-lg">
+                <span class="btn-icon">⚡</span> Start This Workout
+              </button>
+              <button id="btn-empty-workout" class="btn btn-secondary">
+                + Start Empty Workout
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Routine Selector Carousel -->
+          <div class="section-header">
+            <h3>Saved Routines</h3>
+            <button class="text-link" onclick="App.navigate('routines')">View All</button>
+          </div>
+          <div id="routines-quick-list" class="routine-card-grid"></div>
+
+          <!-- Recent Workout History Snippet -->
+          <div class="section-header mt-lg">
+            <h3>Recent Sessions</h3>
+          </div>
+          <div id="recent-workouts-list" class="history-list"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: ROUTINES / PROGRAM BUILDER -->
+      <section id="view-routines" class="tab-view">
+        <div class="content-padded">
+          <div class="view-header">
+            <div>
+              <h2>Routines & Programs</h2>
+              <p class="subtitle">Structured periodized splits and custom mesocycles</p>
+            </div>
+            <button id="btn-create-routine" class="btn btn-primary btn-sm">+ New Routine</button>
+          </div>
+          <div id="routines-full-list" class="routine-card-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: EXERCISES LIBRARY -->
+      <section id="view-exercises" class="tab-view">
+        <div class="content-padded">
+          <div class="view-header">
+            <div>
+              <h2>Exercise Catalog</h2>
+              <p class="subtitle">Search 60+ exercises with 1RM and volume analytics</p>
+            </div>
+          </div>
+          
+          <div class="search-bar-wrap">
+            <input type="text" id="exercise-search-input" placeholder="Search exercises, muscles, equipment..." class="input-search">
+          </div>
+
+          <!-- Muscle Filters -->
+          <div class="filter-pills" id="exercise-muscle-filters">
+            <button class="filter-pill active" data-muscle="all">All</button>
+            <button class="filter-pill" data-muscle="Chest">Chest</button>
+            <button class="filter-pill" data-muscle="Back">Back</button>
+            <button class="filter-pill" data-muscle="Quads">Quads</button>
+            <button class="filter-pill" data-muscle="Hamstrings">Hamstrings</button>
+            <button class="filter-pill" data-muscle="Shoulders">Shoulders</button>
+            <button class="filter-pill" data-muscle="Biceps">Biceps</button>
+            <button class="filter-pill" data-muscle="Triceps">Triceps</button>
+            <button class="filter-pill" data-muscle="Core">Core</button>
+          </div>
+
+          <div id="exercises-list" class="exercise-list"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: ANALYTICS & VOLUME HEATMAP -->
+      <section id="view-analytics" class="tab-view">
+        <div class="content-padded">
+          <div class="view-header">
+            <div>
+              <h2>Progress & Volume</h2>
+              <p class="subtitle">Volume landmarks (RP Hypertrophy) & 1RM Calculator</p>
+            </div>
+          </div>
+
+          <!-- 1RM Calculator Card -->
+          <div class="card analytics-card">
+            <div class="card-header-flex">
+              <h3>One-Rep Max (1RM) Calculator</h3>
+              <span class="badge badge-accent">Epley & Brzycki</span>
+            </div>
+            <div class="calc-row">
+              <div class="input-group">
+                <label>Weight (<span class="unit-label">kg</span>)</label>
+                <input type="number" id="calc-weight" value="100" step="2.5" class="input-numeric">
+              </div>
+              <div class="input-group">
+                <label>Reps Completed</label>
+                <input type="number" id="calc-reps" value="8" min="1" max="30" class="input-numeric">
+              </div>
+            </div>
+            <div class="calc-results">
+              <div class="calc-result-box">
+                <span class="result-label">Estimated 1RM (Epley)</span>
+                <span class="result-val highlight" id="calc-result-epley">126.7 kg</span>
+              </div>
+              <div class="calc-result-box">
+                <span class="result-label">Brzycki Formula</span>
+                <span class="result-val" id="calc-result-brzycki">124.1 kg</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekly Muscle Group Volume vs RP Landmarks -->
+          <div class="card analytics-card mt-md">
+            <div class="card-header-flex">
+              <h3>Weekly Volume vs. RP Landmarks</h3>
+              <span class="text-muted text-xs">Direct Sets / Week</span>
+            </div>
+            <p class="text-xs text-muted mb-sm">Based on Dr. Mike Israetel's Hypertrophy Volume Landmarks (MEV = 10, MAV = 16, MRV = 22 sets).</p>
+            <div id="volume-bars-container" class="volume-bars"></div>
+          </div>
+
+          <!-- Personal Records Vault -->
+          <div class="card analytics-card mt-md">
+            <div class="card-header-flex">
+              <h3>Personal Record (PR) Vault</h3>
+              <span class="badge badge-gold">🏆 Milestones</span>
+            </div>
+            <div id="pr-vault-list" class="pr-vault-grid"></div>
+          </div>
+
+          <!-- Bodyweight Tracker with 7-Day Moving Average -->
+          <div class="card analytics-card mt-md">
+            <div class="card-header-flex">
+              <h3>Bodyweight & Trend</h3>
+              <button id="btn-log-weight" class="btn btn-secondary btn-xs">+ Log Weight</button>
+            </div>
+            <div class="weight-summary">
+              <div>
+                <span class="text-xs text-muted">Current Weight</span>
+                <div class="weight-val" id="current-weight-val">82.4 kg</div>
+              </div>
+              <div>
+                <span class="text-xs text-muted">7-Day Rolling Avg</span>
+                <div class="weight-val highlight" id="avg-weight-val">82.1 kg</div>
+              </div>
+            </div>
+            <div id="weight-history-list" class="history-table mt-sm"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: OFFLINE SYNC & SETTINGS -->
+      <section id="view-settings" class="tab-view">
+        <div class="content-padded">
+          <div class="view-header">
+            <div>
+              <h2>Sync & Preferences</h2>
+              <p class="subtitle">Offline-first sync engine, audio ducking & unit controls</p>
+            </div>
+          </div>
+
+          <!-- Offline Sync Engine Inspector -->
+          <div class="card settings-card">
+            <h3>Offline Sync Engine Simulator</h3>
+            <p class="text-xs text-muted mb-md">Test gym dead zones. Toggle network condition to witness offline mutation queueing and automatic reconciliation upon reconnection.</p>
+            
+            <div class="network-toggle-group">
+              <button class="network-btn active" data-mode="online">🟢 High-Speed Online</button>
+              <button class="network-btn" data-mode="poor">🟠 Poor Gym Cellular (2G)</button>
+              <button class="network-btn" data-mode="offline">🔴 Offline (Basement Gym)</button>
+            </div>
+
+            <div class="sync-queue-inspector mt-md">
+              <div class="flex-between">
+                <span class="text-sm font-semibold">Local Mutation Queue</span>
+                <button id="btn-force-sync" class="btn btn-secondary btn-xs">⚡ Reconcile Now</button>
+              </div>
+              <div id="mutation-queue-display" class="queue-json-box">
+                <p class="text-xs text-muted">No pending offline mutations. All data synced with server.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preferences Card -->
+          <div class="card settings-card mt-md">
+            <h3>App Preferences</h3>
+            <div class="setting-row">
+              <div>
+                <div class="setting-title">Unit System</div>
+                <div class="setting-desc">Switch between Metric (kg) and Imperial (lbs)</div>
+              </div>
+              <div class="unit-toggle-group">
+                <button id="btn-unit-kg" class="unit-pill active">KG</button>
+                <button id="btn-unit-lbs" class="unit-pill">LBS</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div>
+                <div class="setting-title">Audio Rest Ducking</div>
+                <div class="setting-desc">Lower background music and play subtle chime at 00:00</div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-audio-ducking" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <div>
+                <div class="setting-title">Default Rest Period</div>
+                <div class="setting-desc">Standard rest duration for compound lifts</div>
+              </div>
+              <select id="setting-default-rest" class="select-styled">
+                <option value="60">60 Seconds</option>
+                <option value="90" selected>90 Seconds</option>
+                <option value="120">2 Minutes</option>
+                <option value="180">3 Minutes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- STICKY REST TIMER BAR (Appears during an active workout when timer runs) -->
+    <div id="sticky-rest-bar" class="sticky-rest-bar hidden">
+      <div class="rest-bar-content">
+        <div class="rest-timer-info">
+          <span class="rest-label">REST TIMER</span>
+          <span id="rest-timer-countdown" class="rest-countdown">01:30</span>
+        </div>
+        <div class="rest-progress-track">
+          <div id="rest-progress-fill" class="rest-progress-fill"></div>
+        </div>
+        <div class="rest-actions">
+          <button id="btn-rest-add30" class="btn-rest-control">+30s</button>
+          <button id="btn-rest-skip" class="btn-rest-control btn-rest-skip">Skip</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOM TACTILE IN-GYM NUMERIC KEYPAD -->
+    <div id="in-gym-keypad" class="in-gym-keypad hidden">
+      <div class="keypad-plate-helpers">
+        <span class="plate-label">Quick Add:</span>
+        <button class="plate-pill" data-delta="1.25">+1.25</button>
+        <button class="plate-pill" data-delta="2.5">+2.5</button>
+        <button class="plate-pill" data-delta="5.0">+5.0</button>
+        <button class="plate-pill" data-delta="-2.5">-2.5</button>
+        <button class="plate-pill plate-pill-action" id="keypad-match-prev">Match Prev</button>
+        <button class="plate-pill plate-pill-done" id="keypad-close-btn">Done</button>
+      </div>
+      <div class="keypad-grid">
+        <button class="key-btn" data-key="1">1</button>
+        <button class="key-btn" data-key="2">2</button>
+        <button class="key-btn" data-key="3">3</button>
+        <button class="key-btn" data-key="4">4</button>
+        <button class="key-btn" data-key="5">5</button>
+        <button class="key-btn" data-key="6">6</button>
+        <button class="key-btn" data-key="7">7</button>
+        <button class="key-btn" data-key="8">8</button>
+        <button class="key-btn" data-key="9">9</button>
+        <button class="key-btn" data-key=".">.</button>
+        <button class="key-btn" data-key="0">0</button>
+        <button class="key-btn key-backspace" data-key="backspace">⌫</button>
+      </div>
+    </div>
+
+    <!-- BOTTOM APP NAVIGATION BAR -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="train">
+        <span class="nav-icon">🏋️</span>
+        <span class="nav-label">Train</span>
+      </button>
+      <button class="nav-item" data-tab="routines">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Routines</span>
+      </button>
+      <button class="nav-item" data-tab="exercises">
+        <span class="nav-icon">📖</span>
+        <span class="nav-label">Exercises</span>
+      </button>
+      <button class="nav-item" data-tab="analytics">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Analytics</span>
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Sync</span>
+      </button>
+    </nav>
+
+    <!-- MODAL: ADD EXERCISE TO ACTIVE WORKOUT -->
+    <div id="modal-add-exercise" class="modal-backdrop hidden">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3>Add Exercise to Session</h3>
+          <button class="btn-close" id="btn-close-exercise-modal">&times;</button>
+        </div>
+        <div class="search-bar-wrap mb-sm">
+          <input type="text" id="modal-exercise-search" placeholder="Search exercises..." class="input-search">
+        </div>
+        <div id="modal-exercise-list" class="modal-exercise-list"></div>
+      </div>
+    </div>
+
+    <!-- MODAL: CREATE CUSTOM ROUTINE -->
+    <div id="modal-create-routine" class="modal-backdrop hidden">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3>Create Custom Routine</h3>
+          <button class="btn-close" id="btn-close-routine-modal">&times;</button>
+        </div>
+        <div class="input-group mb-sm">
+          <label>Routine Title</label>
+          <input type="text" id="new-routine-title" placeholder="e.g. Leg Day Destruction" class="input-text">
+        </div>
+        <div class="input-group mb-md">
+          <label>Notes / Objective</label>
+          <input type="text" id="new-routine-notes" placeholder="Focus on quad volume and knee flexion" class="input-text">
+        </div>
+        <div class="section-header">
+          <h4>Exercises in Routine</h4>
+          <button id="btn-add-ex-to-routine" class="btn btn-secondary btn-xs">+ Add Exercise</button>
+        </div>
+        <div id="routine-builder-exercises" class="routine-builder-list mb-md"></div>
+        <button id="btn-save-new-routine" class="btn btn-primary btn-block">Save Routine</button>
+      </div>
+    </div>
+
+    <!-- MODAL: WORKOUT COMPLETE SUMMARY & PR CELEBRATION -->
+    <div id="modal-workout-summary" class="modal-backdrop hidden">
+      <div class="modal-card text-center">
+        <div class="celebration-emoji">🏆</div>
+        <h2 class="title-gold">Workout Crushed!</h2>
+        <p id="summary-workout-title" class="text-muted">PPL: Push Hypertrophy</p>
+        
+        <div class="summary-stats-grid mt-md">
+          <div class="stat-box">
+            <span class="stat-number" id="summary-time">48m</span>
+            <span class="stat-title">Duration</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number" id="summary-volume">5,420 kg</span>
+            <span class="stat-title">Total Volume</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number" id="summary-sets">16</span>
+            <span class="stat-title">Sets Done</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-number highlight" id="summary-prs">1</span>
+            <span class="stat-title">PRs Broken</span>
+          </div>
+        </div>
+
+        <div id="summary-pr-banner" class="pr-milestone-banner mt-md hidden">
+          <span class="pr-badge">NEW RECORD!</span>
+          <span id="summary-pr-text">Bench Press: 102.5kg × 8 reps (e1RM: 130kg)</span>
+        </div>
+
+        <button id="btn-dismiss-summary" class="btn btn-primary btn-block mt-lg">Save & Finish</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

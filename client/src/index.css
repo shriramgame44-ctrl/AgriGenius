@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+/* Custom smooth transitions & scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.gradient-mesh {
+  background-color: #f0fdf4;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(142, 70%, 94%, 1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(38, 92%, 94%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 100%, hsla(160, 84%, 95%, 1) 0, transparent 50%);
+}
