@@ -22,19 +22,28 @@ export const getDb = async () => {
   const databaseUrl = process.env.DATABASE_URL;
 
   // Try PostgreSQL Pool if URL is configured
-  if (databaseUrl && !databaseUrl.includes("localhost:5432") || process.env.USE_REMOTE_DB === "true") {
+  if (databaseUrl && (!databaseUrl.includes("localhost:5432") || process.env.USE_REMOTE_DB === "true")) {
     try {
+      const isRemote =
+        databaseUrl.includes("supabase.co") ||
+        databaseUrl.includes("supabase.com") ||
+        databaseUrl.includes("pooler.supabase.com") ||
+        databaseUrl.includes("render.com") ||
+        databaseUrl.includes("neon.tech") ||
+        process.env.NODE_ENV === "production";
+
       const pool = new Pool({
         connectionString: databaseUrl,
-        connectionTimeoutMillis: 3000,
+        connectionTimeoutMillis: 10000,
+        ssl: isRemote ? { rejectUnauthorized: false } : undefined,
       });
       // Test connection
       await pool.query("SELECT 1");
-      console.log("Connected to standard PostgreSQL instance.");
+      console.log("✅ Successfully connected to remote PostgreSQL database (Supabase).");
       pgPool = pool;
       return { type: "pool", client: pgPool };
     } catch (err: any) {
-      console.warn("PostgreSQL server connection unavailable:", err.message);
+      console.warn("⚠️ Remote PostgreSQL server connection unavailable:", err.message);
       console.log("Falling back to embedded PostgreSQL (PGlite)...");
     }
   }
