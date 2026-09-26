@@ -1,0 +1,19 @@
+{
+  "name": "AgriGenius - Smart Farmer Suite",
+  "short_name": "AgriGenius",
+  "description": "Offline-First Agricultural Operating System for Farmers. AI Crop Doctor, Satellite Measuring, Fertilizer Subsidies & Govt Grants.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#064e3b",
+  "theme_color": "#047857",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"]
+}

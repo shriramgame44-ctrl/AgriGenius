@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
 import { initDb } from "./config/db";
 import apiRoutes from "./routes";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.middleware";
@@ -31,7 +33,28 @@ app.use("/api", generalRateLimiter);
 // Mount API router
 app.use("/api", apiRoutes);
 
-// Error Handling Middlewares
+// Serve static frontend files if client/dist exists
+const possibleDistPaths = [
+  path.resolve(__dirname, "../../client/dist"),
+  path.resolve(process.cwd(), "client/dist"),
+  path.resolve(process.cwd(), "../client/dist"),
+];
+const clientDistPath = possibleDistPaths.find((p) => fs.existsSync(p));
+
+if (clientDistPath) {
+  console.log(`📦 Serving static client bundle from: ${clientDistPath}`);
+  app.use(express.static(clientDistPath));
+
+  // For any non-API route, send index.html (SPA client routing)
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, "index.html"));
+  });
+}
+
+// Error Handling Middlewares (for unmatched /api routes)
 app.use(notFoundHandler);
 app.use(errorHandler);
 

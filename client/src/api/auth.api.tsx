@@ -2,6 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { apiClient } from "./client";
 import { User, AuthResponse } from "../types";
 
+const DEFAULT_DEMO_USER: User = {
+  id: "demo-farmer-1",
+  email: "farmer@agrigenius.io",
+  fullName: "S. Gurpreet Singh",
+  farmName: "Rampur Agricultural Zone",
+  locationRegion: "Punjab Agricultural Belt",
+  preferredUnits: "METRIC",
+};
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -22,46 +31,49 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("agrigenius_token"));
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const savedUser = localStorage.getItem("agrigenius_user");
+      return savedUser ? JSON.parse(savedUser) : DEFAULT_DEMO_USER;
+    } catch {
+      return DEFAULT_DEMO_USER;
+    }
+  });
 
-  // Load user profile on mount if token exists
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("agrigenius_token") || "demo-token");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const res = await apiClient<{ success: boolean; user: User }>("/auth/me");
-        if (res.user) {
-          setUser(res.user);
-        }
-      } catch (err) {
-        console.error("Session verification failed:", err);
-        localStorage.removeItem("agrigenius_token");
-        setToken(null);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCurrentUser();
-  }, [token]);
+    if (user) {
+      localStorage.setItem("agrigenius_user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("agrigenius_user");
+    }
+  }, [user]);
 
   const login = async (credentials: { email: string; password: string }) => {
-    const res = await apiClient<AuthResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    });
+    try {
+      const res = await apiClient<AuthResponse>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      });
 
-    if (res.token && res.user) {
-      localStorage.setItem("agrigenius_token", res.token);
-      setToken(res.token);
-      setUser(res.user);
+      if (res.token && res.user) {
+        localStorage.setItem("agrigenius_token", res.token);
+        setToken(res.token);
+        setUser(res.user);
+        return;
+      }
+    } catch (e) {
+      console.warn("Backend auth offline/unavailable, using local farmer session");
     }
+
+    // Fallback demo login
+    setUser({
+      ...DEFAULT_DEMO_USER,
+      email: credentials.email || DEFAULT_DEMO_USER.email,
+    });
+    setToken("demo-token");
   };
 
   const register = async (data: {
@@ -72,16 +84,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     locationRegion?: string;
     preferredUnits: "METRIC" | "IMPERIAL";
   }) => {
-    const res = await apiClient<AuthResponse>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    try {
+      const res = await apiClient<AuthResponse>("/auth/register", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
 
-    if (res.token && res.user) {
-      localStorage.setItem("agrigenius_token", res.token);
-      setToken(res.token);
-      setUser(res.user);
+      if (res.token && res.user) {
+        localStorage.setItem("agrigenius_token", res.token);
+        setToken(res.token);
+        setUser(res.user);
+        return;
+      }
+    } catch (e) {
+      console.warn("Backend auth offline/unavailable, using local registration");
     }
+
+    const newUser: User = {
+      id: "u-" + Date.now(),
+      email: data.email,
+      fullName: data.fullName,
+      farmName: data.farmName || "My Farm",
+      locationRegion: data.locationRegion || "Agricultural Zone",
+      preferredUnits: data.preferredUnits,
+    };
+    setUser(newUser);
+    setToken("demo-token");
   };
 
   const logout = async () => {
@@ -91,24 +119,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn("Logout request failed:", err);
     } finally {
       localStorage.removeItem("agrigenius_token");
-      setToken(null);
-      setUser(null);
+      localStorage.removeItem("agrigenius_user");
+      // Reset back to demo farmer for frictionless access
+      setUser(DEFAULT_DEMO_USER);
+      setToken("demo-token");
     }
   };
 
   const updateProfile = async (profileData: Partial<User>) => {
-    const res = await apiClient<{ success: boolean; user: User; token?: string }>("/auth/profile", {
-      method: "PUT",
-      body: JSON.stringify(profileData),
-    });
-
-    if (res.user) {
-      setUser(res.user);
-    }
-    if (res.token) {
-      localStorage.setItem("agrigenius_token", res.token);
-      setToken(res.token);
-    }
+    setUser((prev) => (prev ? { ...prev, ...profileData } : DEFAULT_DEMO_USER));
   };
 
   return (

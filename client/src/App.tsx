@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./api/auth.api";
+import { AgriProvider } from "./context/AgriContext";
 import { AppLayout } from "./layouts/AppLayout";
 import { AuthLayout } from "./layouts/AuthLayout";
 import { LandingPage } from "./pages/LandingPage";
@@ -13,6 +14,14 @@ import { LivestockWelfareWizardPage } from "./pages/LivestockWelfareWizardPage";
 import { AdvisoryResultsPage } from "./pages/AdvisoryResultsPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { CropScannerPage } from "./pages/CropScannerPage";
+import { FertilizerStorePage } from "./pages/FertilizerStorePage";
+import { MarketplacePage } from "./pages/MarketplacePage";
+import { ChatPage } from "./pages/ChatPage";
+import { LedgerPage } from "./pages/LedgerPage";
+import { EquipmentPage } from "./pages/EquipmentPage";
+import { FarmMapPage } from "./pages/FarmMapPage";
+import { GovtSchemesPage } from "./pages/GovtSchemesPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,32 +37,44 @@ export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Landing Page */}
-            <Route path="/" element={<LandingPage />} />
+        <AgriProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Landing Page */}
+              <Route path="/" element={<LandingPage />} />
 
-            {/* Auth Routes */}
-            <Route path="/auth" element={<AuthLayout />}>
-              <Route path="login" element={<LoginPage />} />
-              <Route path="register" element={<RegisterPage />} />
-              <Route index element={<Navigate to="/auth/login" replace />} />
-            </Route>
+              {/* Auth Routes */}
+              <Route path="/auth" element={<AuthLayout />}>
+                <Route path="login" element={<LoginPage />} />
+                <Route path="register" element={<RegisterPage />} />
+                <Route index element={<Navigate to="/auth/login" replace />} />
+              </Route>
 
-            {/* Protected App Routes */}
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/advisory/new-crop" element={<CropAdvisoryWizardPage />} />
-              <Route path="/advisory/livestock-care" element={<LivestockWelfareWizardPage />} />
-              <Route path="/advisory/results/:id" element={<AdvisoryResultsPage />} />
-              <Route path="/history" element={<HistoryPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Route>
+              {/* Protected App Routes */}
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/scanner" element={<CropScannerPage />} />
+                <Route path="/store" element={<FertilizerStorePage />} />
+                <Route path="/marketplace" element={<MarketplacePage />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/ledger" element={<LedgerPage />} />
+                <Route path="/equipment" element={<EquipmentPage />} />
+                <Route path="/fields" element={<FarmMapPage />} />
+                <Route path="/schemes" element={<GovtSchemesPage />} />
+                
+                {/* Agronomy Advisories */}
+                <Route path="/advisory/new-crop" element={<CropAdvisoryWizardPage />} />
+                <Route path="/advisory/livestock-care" element={<LivestockWelfareWizardPage />} />
+                <Route path="/advisory/results/:id" element={<AdvisoryResultsPage />} />
+                <Route path="/history" element={<HistoryPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AgriProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
