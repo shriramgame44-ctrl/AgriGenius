@@ -12,13 +12,19 @@ import { generalRateLimiter } from "./middleware/rateLimit.middleware";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 // Security & Parsing Middleware
 app.use(
   cors({
-    origin: [CLIENT_URL, "http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: (origin, callback) => {
+      // Allow same-origin, local network, onrender.com, and mobile requests
+      if (!origin || origin.includes("localhost") || origin.includes("onrender.com") || origin === CLIENT_URL) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
@@ -67,7 +73,7 @@ const startServer = async () => {
 
     await initDb();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ AgriGenius API server actively listening on port ${PORT}`);
       console.log(`📡 Health Check: http://localhost:${PORT}/api/health`);
     });
