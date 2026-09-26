@@ -309,3 +309,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <p align="center">
   Built with ❤️ for farmers, cattle welfare advocates, and regenerative agriculturalists worldwide.
 </p>
+"# Smart-agricos" 
